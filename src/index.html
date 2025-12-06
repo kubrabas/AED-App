@@ -16,14 +16,36 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     #map {
       width: 100%;
       height: 100vh;
     }
+    #controls {
+      position: absolute;
+      z-index: 1000;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    #locate-btn {
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
+  <div id="controls">
+    <button id="locate-btn">Konumumu göster</button>
+  </div>
+
   <div id="map"></div>
 
   <script
@@ -61,6 +83,31 @@
       .catch((error) => {
         console.error('AED verisi yüklenirken hata:', error);
       });
+
+    // Konumumu göster butonu
+    const locateBtn = document.getElementById('locate-btn');
+
+    locateBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Tarayıcın konum özelliğini desteklemiyor.');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          map.setView([latitude, longitude], 15);
+
+          L.marker([latitude, longitude])
+            .addTo(map)
+            .bindPopup('Şu anki konumun')
+            .openPopup();
+        },
+        (err) => {
+          alert('Konum alınamadı: ' + err.message);
+        }
+      );
+    });
   </script>
 </body>
 </html>
