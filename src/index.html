@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>OED Haritasi</title>
+  <title>OED Haritası</title>
 
   <link
     rel="stylesheet"
@@ -42,9 +42,19 @@
       attribution: '&copy; OpenStreetMap katkıcıları'
     }).addTo(map);
 
-    // Örnek iki AED noktası
-    L.marker([41.0082, 28.9784]).addTo(map).bindPopup('AED Cihazı #1 – Sultanahmet');
-    L.marker([41.0369, 28.9850]).addTo(map).bindPopup('AED Cihazı #2 – Taksim');
+    // aeds.json dosyasından AED noktalarını oku
+    fetch('aeds.json')
+      .then((response) => response.json())
+      .then((data) => {
+        data.forEach((aed) => {
+          L.marker([aed.lat, aed.lon])
+            .addTo(map)
+            .bindPopup(aed.name);
+        });
+      })
+      .catch((error) => {
+        console.error('AED verisi yüklenirken hata:', error);
+      });
   </script>
 </body>
 </html>
