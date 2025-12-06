@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>OED Haritasi</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    // Haritayı İstanbul üzerinde başlat
+    const map = L.map('map').setView([41.015137, 28.97953], 12);
+
+    // OpenStreetMap katmanı
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap katkıcıları'
+    }).addTo(map);
+
+    // Örnek iki AED noktası
+    L.marker([41.0082, 28.9784]).addTo(map).bindPopup('AED Cihazı #1 – Sultanahmet');
+    L.marker([41.0369, 28.9850]).addTo(map).bindPopup('AED Cihazı #2 – Taksim');
+  </script>
+</body>
+</html>
