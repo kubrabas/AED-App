@@ -42,14 +42,20 @@
       attribution: '&copy; OpenStreetMap katkıcıları'
     }).addTo(map);
 
-    // aeds.json dosyasından AED noktalarını oku
+    // aeds.json dosyasından OED/AED noktalarını oku
     fetch('aeds.json')
       .then((response) => response.json())
       .then((data) => {
         data.forEach((aed) => {
+          const popupHtml = `
+            <strong>${aed.name}</strong><br/>
+            Adres: ${aed.address || 'Bilgi yok'}<br/>
+            Erişim: ${aed.access || 'Bilgi yok'}
+          `;
+
           L.marker([aed.lat, aed.lon])
             .addTo(map)
-            .bindPopup(aed.name);
+            .bindPopup(popupHtml);
         });
       })
       .catch((error) => {
