@@ -64,6 +64,9 @@
       attribution: '&copy; OpenStreetMap katkıcıları'
     }).addTo(map);
 
+    // AED verilerini ve marker'ları tutmak için
+    let aedMarkers = [];
+
     // aeds.json dosyasından OED/AED noktalarını oku
     fetch('aeds.json')
       .then((response) => response.json())
@@ -75,14 +78,36 @@
             Erişim: ${aed.access || 'Bilgi yok'}
           `;
 
-          L.marker([aed.lat, aed.lon])
+          const marker = L.marker([aed.lat, aed.lon])
             .addTo(map)
             .bindPopup(popupHtml);
+
+          aedMarkers.push({ aed, marker });
         });
       })
       .catch((error) => {
         console.error('AED verisi yüklenirken hata:', error);
       });
+
+    // İki koordinat arasındaki uzaklık (metre) – Haversine
+    function distanceInMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Dünya yarıçapı (metre)
+      const toRad = (deg) => (deg * Math.PI) / 180;
+
+      const φ1 = toRad(lat1);
+      const φ2 = toRad(lat2);
+      const Δφ = toRad(lat2 - lat1);
+      const Δλ = toRad(lon2 - lon1);
+
+      const a =
+        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c; // metre
+    }
 
     // Konumumu göster butonu
     const locateBtn = document.getElementById('locate-btn');
@@ -96,12 +121,41 @@
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
+
+          // Haritayı kullanıcının konumuna götür
           map.setView([latitude, longitude], 15);
 
+          // Kullanıcının konumuna marker
           L.marker([latitude, longitude])
             .addTo(map)
             .bindPopup('Şu anki konumun')
             .openPopup();
+
+          // En yakın OED'yi bul
+          if (aedMarkers.length > 0) {
+            let closest = null;
+            let minDist = Infinity;
+
+            aedMarkers.forEach(({ aed, marker }) => {
+              const d = distanceInMeters(latitude, longitude, aed.lat, aed.lon);
+              if (d < minDist) {
+                minDist = d;
+                closest = { aed, marker };
+              }
+            });
+
+            if (closest) {
+              const metres = Math.round(minDist);
+              const km = (minDist / 1000).toFixed(2);
+
+              closest.marker.openPopup();
+              alert(
+                `En yakın OED:\n` +
+                `${closest.aed.name}\n\n` +
+                `Yaklaşık uzaklık: ${metres} m (${km} km)`
+              );
+            }
+          }
         },
         (err) => {
           alert('Konum alınamadı: ' + err.message);
