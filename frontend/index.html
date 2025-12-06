@@ -68,7 +68,7 @@
     let aedMarkers = [];
 
     // aeds.json dosyasından OED/AED noktalarını oku
-    fetch('aeds.json')
+    fetch('http://localhost:8001/aeds')
       .then((response) => response.json())
       .then((data) => {
         data.forEach((aed) => {
