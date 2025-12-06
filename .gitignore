@@ -209,3 +209,5 @@ __marimo__/
 
 
 Notes.md
+.venv_oed/
+__pycache__/
