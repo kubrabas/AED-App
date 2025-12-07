@@ -4,13 +4,31 @@
     "lat": 41.0082,
     "lon": 28.9784,
     "address": "Sultanahmet Meydanı, İstanbul",
-    "access": "7/24 erişim"
+    "access": "7/24 erişim",
+    "opening_hours": "24/7",
+    "place_type": "turistik alan",
+    "indoor_outdoor": "outdoor",
+    "floor": "Açık alan",
+    "landmark": "Sultanahmet Camii ana girişinin karşısı",
+    "operator": "İBB",
+    "phone": "+90 212 000 00 00",
+    "last_check_date": "2024-12-01",
+    "notes": "Talimatlar Türkçe ve İngilizce mevcut."
   },
   {
     "name": "AED Cihazı #2 – Taksim",
     "lat": 41.0369,
     "lon": 28.985,
     "address": "Taksim Meydanı, İstanbul",
-    "access": "AVM çalışma saatlerinde"
+    "access": "AVM çalışma saatlerinde",
+    "opening_hours": "10:00–22:00",
+    "place_type": "AVM",
+    "indoor_outdoor": "indoor",
+    "floor": "Zemin kat",
+    "landmark": "Ana girişten girince sol tarafta bilgi masası yanında",
+    "operator": "Özel AVM",
+    "phone": "+90 212 111 11 11",
+    "last_check_date": "2024-11-20",
+    "notes": "Cihaz düzenli olarak haftalık kontrol ediliyor."
   }
 ]

@@ -114,11 +114,25 @@
       .then((response) => response.json())
       .then((data) => {
         data.forEach((aed) => {
-          const popupHtml = `
-            <strong>${aed.name}</strong><br/>
-            Adres: ${aed.address || 'Bilgi yok'}<br/>
-            Erişim: ${aed.access || 'Bilgi yok'}
-          `;
+          const lines = [];
+
+          // Zorunlu gibi alanlar
+          lines.push(`<strong>${aed.name}</strong>`);
+          if (aed.address)       lines.push(`Adres: ${aed.address}`);
+          if (aed.access)        lines.push(`Erişim: ${aed.access}`);
+
+          // Opsiyonel alanlar
+          if (aed.opening_hours)  lines.push(`Çalışma saatleri: ${aed.opening_hours}`);
+          if (aed.place_type)     lines.push(`Yer tipi: ${aed.place_type}`);
+          if (aed.indoor_outdoor) lines.push(`İç/Dış: ${aed.indoor_outdoor}`);
+          if (aed.floor)          lines.push(`Kat: ${aed.floor}`);
+          if (aed.landmark)       lines.push(`Tarif: ${aed.landmark}`);
+          if (aed.operator)       lines.push(`Sorumlu: ${aed.operator}`);
+          if (aed.phone)          lines.push(`Telefon: ${aed.phone}`);
+          if (aed.last_check_date)lines.push(`Son kontrol: ${aed.last_check_date}`);
+          if (aed.notes)          lines.push(`Not: ${aed.notes}`);
+
+          const popupHtml = lines.join("<br/>");
 
           const marker = L.marker([aed.lat, aed.lon])
             .addTo(map)
