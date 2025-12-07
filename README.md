@@ -1,6 +1,6 @@
 # AED Map – Turkey (WIP)
 
-This is a **work–in–progress** web app for visualising public Automated External Defibrillators (AEDs) on a map in Turkey.
+This is a **work–in–progress** web app (with a future mobile app in mind) for visualising public Automated External Defibrillators (AEDs) on a map in Turkey.
 
 ## What is an AED?
 
