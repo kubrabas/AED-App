@@ -31,6 +31,7 @@
       padding: 8px 12px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      max-width: 260px;
       font-size: 14px;
     }
     #locate-btn {
@@ -39,30 +40,26 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
+      margin-bottom: 6px;
     }
-    /* Alttaki şık bilgi kutusu */
-    #info-box {
-      position: absolute;
-      z-index: 1000;
-      bottom: 10px;
-      left: 10px;
-      max-width: 280px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      font-size: 14px;
+    #nearest-info {
+      margin-top: 6px;
+      font-size: 13px;
       line-height: 1.4;
+    }
+    #nearest-info strong {
+      display: block;
+      margin-bottom: 2px;
     }
   </style>
 </head>
 <body>
   <div id="controls">
-    <button id="locate-btn">En yakın OED cihazını göster</button>
+    <button id="locate-btn">En yakın OED'yi göster</button>
+    <div id="nearest-info"></div>
   </div>
 
   <div id="map"></div>
-  <div id="info-box"></div>
 
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -71,7 +68,7 @@
   ></script>
 
   <script>
-    // Haritayı varsayılan olarak İstanbul üzerinde başlat
+    // Haritayı İstanbul üzerinde başlat (fallback)
     const map = L.map('map').setView([41.015137, 28.97953], 12);
 
     // OpenStreetMap katmanı
@@ -80,40 +77,39 @@
       attribution: '&copy; OpenStreetMap katkıcıları'
     }).addTo(map);
 
-    const infoBox = document.getElementById('info-box');
-
-    // Kullanıcının konumunu saklayalım
-    let userLat = null;
-    let userLon = null;
-
-    // Sayfa açılır açılmaz kullanıcının konumunu iste ve haritayı oraya götür
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          userLat = pos.coords.latitude;
-          userLon = pos.coords.longitude;
-
-          map.setView([userLat, userLon], 15);
-
-          L.marker([userLat, userLon])
-            .addTo(map)
-            .bindPopup('Şu anki konumun')
-            .openPopup();
-
-          infoBox.textContent = "Konumun bulundu. İstersen en yakın OED cihazını görebilirsin.";
-        },
-        (err) => {
-          infoBox.textContent = "Konum alınamadı: " + err.message;
-        }
-      );
-    } else {
-      infoBox.textContent = "Tarayıcın konum özelliğini desteklemiyor.";
-    }
-
     // AED verilerini ve marker'ları tutmak için
     let aedMarkers = [];
 
-    // Backend'den OED/AED noktalarını oku
+    // Kullanıcı konumu (ilk başta bilinmiyor)
+    let userLocation = null;
+    let userMarker = null;
+
+    const nearestInfo = document.getElementById('nearest-info');
+
+    // Sayfa açılır açılmaz kullanıcının konumunu almayı dene
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          userLocation = { lat: latitude, lon: longitude };
+
+          // Haritayı kullanıcının konumuna götür ve marker koy
+          map.setView([latitude, longitude], 15);
+          userMarker = L.marker([latitude, longitude])
+            .addTo(map)
+            .bindPopup('Şu anki konumun')
+            .openPopup();
+        },
+        (err) => {
+          console.warn('Konum alınamadı:', err.message);
+          // Alınamazsa İstanbul merkezde kalır, sorun değil
+        }
+      );
+    } else {
+      console.warn('Tarayıcı konum özelliğini desteklemiyor.');
+    }
+
+    // aeds.json dosyasından OED/AED noktalarını oku
     fetch('http://localhost:8001/aeds')
       .then((response) => response.json())
       .then((data) => {
@@ -133,7 +129,6 @@
       })
       .catch((error) => {
         console.error('AED verisi yüklenirken hata:', error);
-        infoBox.textContent = "AED verisi yüklenirken hata oluştu.";
       });
 
     // İki koordinat arasındaki uzaklık (metre) – Haversine
@@ -156,53 +151,68 @@
       return R * c; // metre
     }
 
-    // Buton: en yakın OED cihazını göster
+    // Konuma göre en yakın OED'yi göster butonu
     const locateBtn = document.getElementById('locate-btn');
 
     locateBtn.addEventListener('click', () => {
-      if (userLat === null || userLon === null) {
-        infoBox.textContent = "Önce konumun bulunmalı (veya izin vermelisin).";
+      if (!userLocation) {
+        alert('Önce konumun alınmalı. Lütfen tarayıcıya konum izni verdiğinden emin ol.');
         return;
       }
 
       if (aedMarkers.length === 0) {
-        infoBox.textContent = "Henüz yüklenmiş OED cihazı yok.";
+        alert('Henüz haritada OED verisi yok.');
         return;
       }
 
+      // En yakın OED'yi bul
       let closest = null;
       let minDist = Infinity;
 
       aedMarkers.forEach(({ aed, marker }) => {
-        const d = distanceInMeters(userLat, userLon, aed.lat, aed.lon);
+        const d = distanceInMeters(
+          userLocation.lat,
+          userLocation.lon,
+          aed.lat,
+          aed.lon
+        );
         if (d < minDist) {
           minDist = d;
           closest = { aed, marker };
         }
       });
 
-      if (closest) {
-        const metres = Math.round(minDist);
+      if (!closest) return;
 
-        let distanceText;
-        if (metres >= 1000) {
-          const km = (metres / 1000).toFixed(1); // 1 ondalık
-          distanceText = `${km} km`;
-        } else {
-          distanceText = `${metres} m`;
-        }
-
-        // Haritayı en yakın OED üzerine odakla
-        map.setView(closest.marker.getLatLng(), 16);
-        closest.marker.openPopup();
-
-        infoBox.innerHTML = `
-          <strong>En yakın OED:</strong><br/>
-          ${closest.aed.name}<br/>
-          <br/>
-          Yaklaşık uzaklık: <strong>${distanceText}</strong>
-        `;
+      // Mesafeyi formatla: 1 km'den küçükse metre, değilse km
+      let displayDistance;
+      if (minDist < 1000) {
+        displayDistance = `${Math.round(minDist)} m`;
+      } else {
+        displayDistance = `${(minDist / 1000).toFixed(2)} km`;
       }
+
+      // Kontrolde yazı olarak göster
+      nearestInfo.innerHTML = `
+        <strong>En yakın OED:</strong>
+        ${closest.aed.name}<br/>
+        <span>Yaklaşık uzaklık: ${displayDistance}</span>
+      `;
+
+      const userLatLng = L.latLng(userLocation.lat, userLocation.lon);
+      const aedLatLng = L.latLng(closest.aed.lat, closest.aed.lon);
+
+      // 1) Önce iki noktayı birden gösterecek şekilde hafifçe zoom out (flyToBounds)
+      map.flyToBounds([userLatLng, aedLatLng], {
+        padding: [50, 50],
+        duration: 1.5
+      });
+
+      // 2) Animasyon bitince AED'nin üzerine zoom in
+      setTimeout(() => {
+        map.flyTo(aedLatLng, 17, { duration: 1.5 });
+        closest.marker.openPopup();
+      }, 1600);
     });
   </script>
 </body>
