@@ -19,3 +19,4 @@ The project is currently focused on **locations in Turkey** and is still under a
 > **Important:** The data in `aeds.json` is **fake / demo data** used only for prototyping.  
 > It does **not** represent real AED locations and must **not** be used in emergencies.
 
+
