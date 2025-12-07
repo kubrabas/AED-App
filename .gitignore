@@ -211,3 +211,5 @@ __marimo__/
 Notes.md
 .venv_oed/
 __pycache__/
+.DS_Store
+Start.md

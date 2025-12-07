@@ -43,7 +43,7 @@
 </head>
 <body>
   <div id="controls">
-    <button id="locate-btn">Konumumu göster</button>
+    <button id="locate-btn">En yakın OED cihazını göster</button>
   </div>
 
   <div id="map"></div>
@@ -55,7 +55,7 @@
   ></script>
 
   <script>
-    // Haritayı İstanbul üzerinde başlat
+    // Haritayı başlangıçta İstanbul üzerinde başlat
     const map = L.map('map').setView([41.015137, 28.97953], 12);
 
     // OpenStreetMap katmanı
@@ -66,6 +66,8 @@
 
     // AED verilerini ve marker'ları tutmak için
     let aedMarkers = [];
+    // Kullanıcının konumu
+    let userLocation = null;
 
     // aeds.json dosyasından OED/AED noktalarını oku
     fetch('http://localhost:8001/aeds')
@@ -109,10 +111,8 @@
       return R * c; // metre
     }
 
-    // Konumumu göster butonu
-    const locateBtn = document.getElementById('locate-btn');
-
-    locateBtn.addEventListener('click', () => {
+    // Konumu isteyen yardımcı fonksiyon
+    function askForLocation(callback) {
       if (!navigator.geolocation) {
         alert('Tarayıcın konum özelliğini desteklemiyor.');
         return;
@@ -121,46 +121,82 @@
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
+          userLocation = { lat: latitude, lon: longitude };
 
-          // Haritayı kullanıcının konumuna götür
-          map.setView([latitude, longitude], 15);
-
-          // Kullanıcının konumuna marker
-          L.marker([latitude, longitude])
-            .addTo(map)
-            .bindPopup('Şu anki konumun')
-            .openPopup();
-
-          // En yakın OED'yi bul
-          if (aedMarkers.length > 0) {
-            let closest = null;
-            let minDist = Infinity;
-
-            aedMarkers.forEach(({ aed, marker }) => {
-              const d = distanceInMeters(latitude, longitude, aed.lat, aed.lon);
-              if (d < minDist) {
-                minDist = d;
-                closest = { aed, marker };
-              }
-            });
-
-            if (closest) {
-              const metres = Math.round(minDist);
-              const km = (minDist / 1000).toFixed(2);
-
-              closest.marker.openPopup();
-              alert(
-                `En yakın OED:\n` +
-                `${closest.aed.name}\n\n` +
-                `Yaklaşık uzaklık: ${metres} m (${km} km)`
-              );
-            }
+          if (typeof callback === 'function') {
+            callback();
           }
         },
         (err) => {
           alert('Konum alınamadı: ' + err.message);
         }
       );
+    }
+
+    // Sayfa açıldığında otomatik olarak konumu al ve haritayı oraya odakla
+    askForLocation(() => {
+      map.setView([userLocation.lat, userLocation.lon], 15);
+
+      L.marker([userLocation.lat, userLocation.lon])
+        .addTo(map)
+        .bindPopup('Şu anki konumun')
+        .openPopup();
+    });
+
+    // En yakın OED'yi bulup gösteren fonksiyon
+    function showClosestAed() {
+      if (!userLocation) {
+        alert('Önce konumun alınamadı. Lütfen yeniden dene.');
+        return;
+      }
+
+      if (aedMarkers.length === 0) {
+        alert('AED verisi henüz yüklenmedi.');
+        return;
+      }
+
+      let closest = null;
+      let minDist = Infinity;
+
+      aedMarkers.forEach(({ aed, marker }) => {
+        const d = distanceInMeters(
+          userLocation.lat,
+          userLocation.lon,
+          aed.lat,
+          aed.lon
+        );
+        if (d < minDist) {
+          minDist = d;
+          closest = { aed, marker };
+        }
+      });
+
+      if (closest) {
+        const metres = Math.round(minDist);
+        const km = (minDist / 1000).toFixed(2);
+
+        // Haritayı en yakın OED'nin üstüne ortala
+        map.setView([closest.aed.lat, closest.aed.lon], 17);
+        closest.marker.openPopup();
+
+        alert(
+          `En yakın OED:\n` +
+          `${closest.aed.name}\n\n` +
+          `Yaklaşık uzaklık: ${metres} m (${km} km)`
+        );
+      }
+    }
+
+    // Buton: En yakın OED cihazını göster
+    const locateBtn = document.getElementById('locate-btn');
+
+    locateBtn.addEventListener('click', () => {
+      if (!userLocation) {
+        // Konum henüz yoksa önce al, sonra en yakın OED'yi göster
+        askForLocation(showClosestAed);
+      } else {
+        showClosestAed();
+      }
     });
   </script>
 </body>
